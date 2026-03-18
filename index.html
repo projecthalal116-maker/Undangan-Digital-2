@@ -87,10 +87,8 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased overflow-hidden" id="bodyWrap">
 
-  <!-- AUDIO (Will play after interaction) -->
-  <audio id="bgm" loop>
-    <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b8c9c.mp3" type="audio/mpeg">
-  </audio>
+  <!-- AUDIO CONTAINER (SoundCloud akan dimuat di sini setelah interaksi) -->
+  <div id="audio-container" class="hidden"></div>
 
   <!-- ================= COVER SECTION ================= -->
   <section id="cover" class="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950 bg-pattern text-white px-4 transition-all duration-1000">
@@ -374,9 +372,9 @@
       // Izinkan body untuk di-scroll
       document.getElementById('bodyWrap').classList.remove('overflow-hidden');
       
-      // Mainkan musik
-      var bgm = document.getElementById('bgm');
-      bgm.play().catch(e => console.log("Audio autoplay blocked by browser."));
+      // Mainkan musik SoundCloud dengan menyematkan iframe saat tombol ditekan (menghindari blokir autoplay browser)
+      var audioContainer = document.getElementById('audio-container');
+      audioContainer.innerHTML = '<iframe width="0" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/shb-bahri/maher-zain-x-harris-j-qalbi&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false"></iframe>';
 
       // Animasi cover naik ke atas (fade out)
       var cover = document.getElementById('cover');
