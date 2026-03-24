@@ -12,8 +12,7 @@
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SoundCloud Widget API (untuk kontrol loop) -->
-  <script src="https://w.soundcloud.com/player/api.js"></script>
+  <!-- Using local audio element for background music -->
   
   <!-- Tailwind Configuration for Custom Colors & Fonts -->
   <script>
@@ -89,8 +88,23 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 antialiased overflow-hidden" id="bodyWrap">
 
-  <!-- AUDIO CONTAINER (SoundCloud akan dimuat di sini setelah interaksi) -->
+  <!-- AUDIO CONTAINER (menyimpan elemen audio lokal) -->
   <div id="audio-container" class="hidden"></div>
+  <audio id="bgm" loop preload="auto" class="hidden">
+    <source src="lagu-halal-bihalal.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Floating Music Control (Play / Pause) -->
+  <button id="musicToggle" aria-label="Play music" class="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-white/90 text-emerald-900 flex items-center justify-center shadow-lg hover:scale-105 transition-transform hidden">
+    <!-- Play Icon -->
+    <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-6.518-3.758A1 1 0 007 8.298v7.404a1 1 0 001.234.97l6.518-1.83a1 1 0 00.748-.97v-3.796a1 1 0 00-.748-.97z" />
+    </svg>
+    <!-- Pause Icon -->
+    <svg id="icon-pause" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6" />
+    </svg>
+  </button>
 
   <!-- ================= COVER SECTION ================= -->
   <section id="cover" class="fixed inset-0 z-50 flex items-center justify-center bg-pattern text-white px-4 transition-all duration-1000" style="background-image: url('https://wallpapers.com/images/hd/scenic-kaaba-phone-uubdpqj8sdrvsjte.jpg'); background-size: cover; background-position: left;">
@@ -358,32 +372,15 @@
       // Izinkan body untuk di-scroll
       document.getElementById('bodyWrap').classList.remove('overflow-hidden');
       
-      // Mainkan musik SoundCloud dengan menyematkan iframe saat tombol ditekan (menghindari blokir autoplay browser)
-      var audioContainer = document.getElementById('audio-container');
-      var scUrl = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent('https://soundcloud.com/dengerin-musik-797697733') + '&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false';
-      audioContainer.innerHTML = `<iframe id="sc-player" width="0" height="0" scrolling="no" frameborder="no" allow="autoplay" src="${scUrl}"></iframe>`;
-
-      // Inisialisasi widget dan bind event FINISH untuk loop
-      // Gunakan global window.scWidget agar tidak membuat binding ganda saat tombol ditekan berulang
-      setTimeout(function() {
-        if (window.SC && !window.scWidget) {
-          var iframe = document.getElementById('sc-player');
-          if (iframe) {
-            window.scWidget = SC.Widget(iframe);
-            window.scWidget.bind(SC.Widget.Events.FINISH, function() {
-              try {
-                window.scWidget.seekTo(0);
-                window.scWidget.play();
-              } catch (e) {
-                // fallback: reload iframe source
-                iframe.src = scUrl;
-              }
-            });
-          }
-        } else if (window.scWidget) {
-          window.scWidget.play();
+      // Mainkan audio lokal jika tersedia (klik tombol Buka Undangan adalah interaksi pengguna)
+      try {
+        var audioEl = document.getElementById('bgm');
+        if (audioEl) {
+          audioEl.play().catch(function(){});
         }
-      }, 300);
+      } catch (e) {
+        // ignore playback errors
+      }
 
       // Animasi cover naik ke atas (fade out)
       var cover = document.getElementById('cover');
@@ -398,6 +395,51 @@
         cover.style.display = 'none';
       }, 1000);
     }
+
+    // Floating music control: control native <audio id="bgm"> element
+    (function() {
+      var isPlaying = false;
+
+      function updateButton() {
+        var playIcon = document.getElementById('icon-play');
+        var pauseIcon = document.getElementById('icon-pause');
+        var btn = document.getElementById('musicToggle');
+        if (!btn) return;
+        if (isPlaying) {
+          playIcon.classList.add('hidden');
+          pauseIcon.classList.remove('hidden');
+          btn.setAttribute('aria-label', 'Pause music');
+        } else {
+          playIcon.classList.remove('hidden');
+          pauseIcon.classList.add('hidden');
+          btn.setAttribute('aria-label', 'Play music');
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('musicToggle');
+        var audioEl = document.getElementById('bgm');
+        if (!btn) return;
+        btn.classList.remove('hidden');
+
+        // keep UI in sync with audio state
+        if (audioEl) {
+          audioEl.addEventListener('play', function() { isPlaying = true; updateButton(); });
+          audioEl.addEventListener('pause', function() { isPlaying = false; updateButton(); });
+          audioEl.addEventListener('ended', function() { /* loop attribute handles this */ });
+        }
+
+        btn.addEventListener('click', function() {
+          if (!audioEl) return;
+          if (audioEl.paused) {
+            audioEl.play().then(function(){ isPlaying = true; updateButton(); }).catch(function(){});
+          } else {
+            audioEl.pause();
+            isPlaying = false; updateButton();
+          }
+        });
+      });
+    })();
 
     // 3. Script Countdown
     var eventDate = new Date("Maret 29, 2026 08:00:00").getTime();
